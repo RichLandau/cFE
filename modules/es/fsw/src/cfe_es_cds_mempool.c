@@ -106,21 +106,21 @@ int32 CFE_ES_CreateCDSPool(size_t CDSPoolSize, size_t StartOffset)
     CFE_ES_CDS_Instance_t *CDS = &CFE_ES_Global.CDSVars;
     int32                  Status;
     size_t                 SizeCheck;
-    size_t                 ActualSize;
+    size_t                 RequestedSize;
 
     SizeCheck  = CFE_ES_GenPoolCalcMinSize(CFE_ES_CDS_NUM_BLOCK_SIZES, CFE_ES_CDSMemPoolDefSize, 1);
-    ActualSize = CDSPoolSize;
+    RequestedSize = CDSPoolSize;
 
-    if (ActualSize < SizeCheck)
+    if (RequestedSize < SizeCheck)
     {
         /* Must be able make Pool verification, block descriptor and at least one of the smallest blocks  */
         CFE_ES_SysLogWrite_Unsync("%s: Pool size(%lu) too small for one CDS Block, need >=%lu\n", __func__,
-                                  (unsigned long)ActualSize, (unsigned long)SizeCheck);
+                                  (unsigned long)RequestedSize, (unsigned long)SizeCheck);
         return CFE_ES_CDS_INVALID_SIZE;
     }
 
     Status = CFE_ES_GenPoolInitialize(&CDS->Pool, StartOffset, /* starting offset */
-                                      ActualSize,              /* total size */
+                                      RequestedSize,              /* total size */
                                       4,                       /* alignment */
                                       CFE_ES_CDS_NUM_BLOCK_SIZES, CFE_ES_CDSMemPoolDefSize, CFE_ES_CDS_PoolRetrieve,
                                       CFE_ES_CDS_PoolCommit);
@@ -195,7 +195,7 @@ int32 CFE_ES_CDSBlockWrite(CFE_ES_CDSHandle_t Handle, const void *DataToWrite)
          * internal descriptor, and validates the descriptor as part of the operation.
          * This should always agree with the size in the registry for this block.
          */
-        Status = CFE_ES_GenPoolGetBlockSize(&CDS->Pool, &BlockSize, CDSRegRecPtr->BlockOffset);
+        Status = CFE_ES_GenPoolGetBlockReqSize(&CDS->Pool, &BlockSize, CDSRegRecPtr->BlockOffset);
         if (Status != CFE_SUCCESS)
         {
             snprintf(LogMessage, sizeof(LogMessage), "Invalid Handle or Block Descriptor.\n");
@@ -288,7 +288,7 @@ int32 CFE_ES_CDSBlockRead(void *DataRead, CFE_ES_CDSHandle_t Handle)
          * internal descriptor, and validates the descriptor as part of the operation.
          * This should always agree with the size in the registry for this block.
          */
-        Status = CFE_ES_GenPoolGetBlockSize(&CDS->Pool, &BlockSize, CDSRegRecPtr->BlockOffset);
+        Status = CFE_ES_GenPoolGetBlockReqSize(&CDS->Pool, &BlockSize, CDSRegRecPtr->BlockOffset);
         if (Status == CFE_SUCCESS)
         {
             if (BlockSize <= sizeof(CFE_ES_CDS_BlockHeader_t) || BlockSize != CDSRegRecPtr->BlockSize)

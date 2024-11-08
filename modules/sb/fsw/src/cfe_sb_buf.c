@@ -96,6 +96,7 @@ CFE_SB_BufferD_t *CFE_SB_GetBufferFromPool(size_t MaxMsgSize)
 {
     int32               stat1;
     size_t              AllocSize;
+    size_t              BlockSize;
     CFE_ES_MemPoolBuf_t addr = NULL;
     CFE_SB_BufferD_t *  bd;
 
@@ -109,6 +110,14 @@ CFE_SB_BufferD_t *CFE_SB_GetBufferFromPool(size_t MaxMsgSize)
         return NULL;
     }
 
+    /* Determine how many bytes were actually allocated for reporting purposes */
+    BlockSize = CFE_ES_GetPoolBufUsedSize(CFE_SB_Global.Mem.PoolHdl, addr);
+    if (BlockSize <= 0)
+    {
+        CFE_ES_WriteToSysLog("SB failed to obtain buffer allocation info, tlm will be an undercount. RC=%ld", BlockSize);
+        BlockSize = AllocSize;
+    }
+
     /* increment the number of buffers in use and adjust the high water mark if needed */
     CFE_SB_Global.StatTlmMsg.Payload.SBBuffersInUse++;
     if (CFE_SB_Global.StatTlmMsg.Payload.SBBuffersInUse > CFE_SB_Global.StatTlmMsg.Payload.PeakSBBuffersInUse)
@@ -118,7 +127,7 @@ CFE_SB_BufferD_t *CFE_SB_GetBufferFromPool(size_t MaxMsgSize)
 
     /* Add the size of the actual buffer to the memory-in-use ctr and */
     /* adjust the high water mark if needed */
-    CFE_SB_Global.StatTlmMsg.Payload.MemInUse += AllocSize;
+    CFE_SB_Global.StatTlmMsg.Payload.MemInUse += BlockSize;
     if (CFE_SB_Global.StatTlmMsg.Payload.MemInUse > CFE_SB_Global.StatTlmMsg.Payload.PeakMemInUse)
     {
         CFE_SB_Global.StatTlmMsg.Payload.PeakMemInUse = CFE_SB_Global.StatTlmMsg.Payload.MemInUse;

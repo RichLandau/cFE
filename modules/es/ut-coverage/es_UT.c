@@ -545,7 +545,7 @@ void ES_UT_SetupSingleCDSRegistry(const char *CDSName, size_t BlockSize, bool Is
 
     LocalBD.CheckBits  = CFE_ES_CHECK_PATTERN;
     LocalBD.Allocated  = CFE_ES_MEMORY_ALLOCATED + 1;
-    LocalBD.ActualSize = BlockSize;
+    LocalBD.RequestedSize = BlockSize;
     LocalBD.NextOffset = 0;
     CFE_ES_Global.CDSVars.Pool.Commit(&CFE_ES_Global.CDSVars.Pool, CFE_ES_Global.CDSVars.Pool.TailPosition, &LocalBD);
 
@@ -2433,13 +2433,13 @@ void TestGenericPool(void)
     CFE_UtAssert_SETUP(CFE_ES_GenPoolGetBlock(&Pool1, &Offset1, Pool1.Buckets[0].BlockSize));
     CFE_UtAssert_SETUP(ES_UT_PoolDirectRetrieve(&Pool1, Offset1 - CFE_ES_GENERIC_POOL_DESCRIPTOR_SIZE, &BdPtr));
 
-    BdPtr->ActualSize = Pool1.Buckets[0].BlockSize + 1;
-    UtAssert_INT32_EQ(CFE_ES_GenPoolGetBlockSize(&Pool1, &BlockSize, Offset1), CFE_ES_POOL_BLOCK_INVALID);
+    BdPtr->RequestedSize = Pool1.Buckets[0].BlockSize + 1;
+    UtAssert_INT32_EQ(CFE_ES_GenPoolGetBlockReqSize(&Pool1, &BlockSize, Offset1), CFE_ES_POOL_BLOCK_INVALID);
 
-    BdPtr->ActualSize = 0;
-    UtAssert_INT32_EQ(CFE_ES_GenPoolGetBlockSize(&Pool1, &BlockSize, Offset1), CFE_ES_POOL_BLOCK_INVALID);
+    BdPtr->RequestedSize = 0;
+    UtAssert_INT32_EQ(CFE_ES_GenPoolGetBlockReqSize(&Pool1, &BlockSize, Offset1), CFE_ES_POOL_BLOCK_INVALID);
 
-    UtAssert_INT32_EQ(CFE_ES_GenPoolGetBlockSize(&Pool1, NULL, 0), CFE_ES_BUFFER_NOT_IN_POOL);
+    UtAssert_INT32_EQ(CFE_ES_GenPoolGetBlockReqSize(&Pool1, NULL, 0), CFE_ES_BUFFER_NOT_IN_POOL);
 
     /* Put pool block with bad allocation info */
     ES_ResetUnitTest();
@@ -2451,7 +2451,7 @@ void TestGenericPool(void)
     BdPtr->CheckBits = ~CFE_ES_CHECK_PATTERN;
     UtAssert_INT32_EQ(CFE_ES_GenPoolPutBlock(&Pool1, &BlockSize, Offset1), CFE_ES_POOL_BLOCK_INVALID);
     BdPtr->CheckBits  = CFE_ES_CHECK_PATTERN;
-    BdPtr->ActualSize = 0;
+    BdPtr->RequestedSize = 0;
     UtAssert_INT32_EQ(CFE_ES_GenPoolPutBlock(&Pool1, &BlockSize, Offset1), CFE_ES_POOL_BLOCK_INVALID);
 
     /* Rebuild generic pool actual size error cases */
@@ -2463,7 +2463,7 @@ void TestGenericPool(void)
     CFE_UtAssert_SETUP(CFE_ES_GenPoolGetBlock(&Pool1, &Offset1, Pool1.Buckets[0].BlockSize));
     CFE_UtAssert_SETUP(ES_UT_PoolDirectRetrieve(&Pool1, Offset1 - CFE_ES_GENERIC_POOL_DESCRIPTOR_SIZE, &BdPtr));
     /* Corrupt the entry */
-    BdPtr->ActualSize = Pool1.Buckets[0].BlockSize + 1;
+    BdPtr->RequestedSize = Pool1.Buckets[0].BlockSize + 1;
     /* Reset the structure so it will rebuild */
     Pool1.TailPosition = 0;
     CFE_UtAssert_SUCCESS(CFE_ES_GenPoolRebuild(&Pool1));
@@ -5440,7 +5440,7 @@ void TestESMempool(void)
     /* Test returning a pool buffer using an invalid or corrupted
      * memory descriptor
      */
-    BdPtr->ActualSize = 0xFFFFFFFF;
+    BdPtr->RequestedSize = 0xFFFFFFFF;
     UtAssert_INT32_EQ(CFE_ES_PutPoolBuf(PoolID1, addressp1), CFE_ES_POOL_BLOCK_INVALID);
 
     /* Test getting the size of an existing pool buffer using an
@@ -5469,7 +5469,7 @@ void TestESMempool(void)
     /* Test returning a pool buffer using an invalid or corrupted
      * memory descriptor.  Use no mutex in order to get branch path coverage
      */
-    BdPtr->ActualSize = 0xFFFFFFFF;
+    BdPtr->RequestedSize = 0xFFFFFFFF;
     UtAssert_INT32_EQ(CFE_ES_PutPoolBuf(PoolID2, addressp2), CFE_ES_POOL_BLOCK_INVALID);
 
     /* Test successfully creating memory pool using a mutex for
@@ -5493,14 +5493,14 @@ void TestESMempool(void)
      * the maximum
      */
     BdPtr             = ((CFE_ES_GenPoolBD_t *)addressp1) - 1;
-    BdPtr->ActualSize = CFE_PLATFORM_ES_MAX_BLOCK_SIZE + 1;
+    BdPtr->RequestedSize = CFE_PLATFORM_ES_MAX_BLOCK_SIZE + 1;
     UtAssert_INT32_EQ(CFE_ES_PutPoolBuf(PoolID1, addressp1), CFE_ES_POOL_BLOCK_INVALID);
 
     /* Test returning a pool buffer using a buffer size larger than
      * the maximum.  Use no mutex in order to get branch path coverage
      */
     BdPtr             = ((CFE_ES_GenPoolBD_t *)addressp2) - 1;
-    BdPtr->ActualSize = CFE_PLATFORM_ES_MAX_BLOCK_SIZE + 1;
+    BdPtr->RequestedSize = CFE_PLATFORM_ES_MAX_BLOCK_SIZE + 1;
     UtAssert_INT32_EQ(CFE_ES_PutPoolBuf(PoolID2, addressp2), CFE_ES_POOL_BLOCK_INVALID);
 
     /* Test allocating an additional pool buffer using a buffer size larger

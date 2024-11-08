@@ -57,7 +57,8 @@ typedef struct CFE_ES_GenPoolBD
 {
     uint16 CheckBits;  /**< Set to a fixed bit pattern after init */
     uint16 Allocated;  /**< Set to a bit pattern depending on allocation state */
-    size_t ActualSize; /**< The actual requested size of the block */
+    size_t RequestedSize; /**< The requested size of the block */
+    size_t BucketSize; /**< The size of the bucket, which may be larger than the amount requested */
     size_t NextOffset; /**< The offset of the next descriptor in the free stack */
 } CFE_ES_GenPoolBD_t;
 
@@ -228,11 +229,41 @@ int32 CFE_ES_GenPoolPutBlock(CFE_ES_GenPoolRecord_t *PoolRecPtr, size_t *BlockSi
 int32 CFE_ES_GenPoolRebuild(CFE_ES_GenPoolRecord_t *PoolRecPtr);
 
 /*---------------------------------------------------------------------------------------*/
+
 /**
- * \brief Get size of pool block
+ * \brief Get pointer to a particular buffer descriptor
+ *
+ * Given a previously allocated block, look up its descriptor information.
+ *
+ * \param[inout] PoolRecPtr     Pointer to pool structure
+ * \param[out]   BufDesc        Location to output buffer descriptor
+ * \param[in]    BlockOffset    Offset of data block
+ *
+ * \return #CFE_SUCCESS, or error code \ref CFEReturnCodes
+ */
+int32 CFE_ES_GenPoolGetBD(CFE_ES_GenPoolRecord_t *PoolRecPtr, CFE_ES_GenPoolBD_t **BufDesc, size_t BlockOffset);
+
+/**
+ * \brief Get size of requested pool block
  *
  * Given a previously allocated block, look up its descriptor information
- * and return the actual size.
+ * and return the requested size. This may be less than the actual memory allocated,
+ * use CFE_ES_GenPoolGetBlockUsedSize for the block's total allocation.
+ *
+ * \param[inout] PoolRecPtr     Pointer to pool structure
+ * \param[out]   BlockSizePtr   Location to output original requested size
+ * \param[in]    BlockOffset    Offset of data block
+ *
+ * \return #CFE_SUCCESS, or error code \ref CFEReturnCodes
+ */
+int32 CFE_ES_GenPoolGetBlockReqSize(CFE_ES_GenPoolRecord_t *PoolRecPtr, size_t *BlockSizePtr, size_t BlockOffset);
+
+/*---------------------------------------------------------------------------------------*/
+/**
+ * \brief Get allocated size of pool block
+ *
+ * Given a previously allocated block, look up its descriptor information
+ * and return the allocated size.
  *
  * \param[inout] PoolRecPtr     Pointer to pool structure
  * \param[out]   BlockSizePtr   Location to output original allocation size
@@ -240,7 +271,7 @@ int32 CFE_ES_GenPoolRebuild(CFE_ES_GenPoolRecord_t *PoolRecPtr);
  *
  * \return #CFE_SUCCESS, or error code \ref CFEReturnCodes
  */
-int32 CFE_ES_GenPoolGetBlockSize(CFE_ES_GenPoolRecord_t *PoolRecPtr, size_t *BlockSizePtr, size_t BlockOffset);
+int32 CFE_ES_GenPoolGetBlockUsedSize(CFE_ES_GenPoolRecord_t *PoolRecPtr, size_t *BlockSizePtr, size_t BlockOffset);
 
 /*---------------------------------------------------------------------------------------*/
 /**

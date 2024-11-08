@@ -1374,16 +1374,42 @@ int32 CFE_ES_GetPoolBuf(CFE_ES_MemPoolBuf_t *BufPtr, CFE_ES_MemHandle_t Handle, 
 **
 ** \param[in]   BufPtr  A pointer to the memory buffer to provide status for @nonnull.
 **
-** \return Size of the buffer if successful, or status code if not successful, see \ref CFEReturnCodes
+** \return Originally requested size of the buffer if successful, or status code if not successful, see \ref CFEReturnCodes
 ** \retval #CFE_ES_ERR_RESOURCEID_NOT_VALID   \copybrief CFE_ES_ERR_RESOURCEID_NOT_VALID
 ** \retval #CFE_ES_BUFFER_NOT_IN_POOL         \copybrief CFE_ES_BUFFER_NOT_IN_POOL
 ** \retval #CFE_ES_BAD_ARGUMENT               \copybrief CFE_ES_BAD_ARGUMENT
 **
 ** \sa #CFE_ES_PoolCreate, #CFE_ES_PoolCreateNoSem, #CFE_ES_PoolCreateEx, #CFE_ES_GetPoolBuf, #CFE_ES_GetMemPoolStats,
-*#CFE_ES_PutPoolBuf
+*#CFE_ES_PutPoolBuf, #CFE_ES_GetPoolBufUsedSize
 **
 ******************************************************************************/
 CFE_Status_t CFE_ES_GetPoolBufInfo(CFE_ES_MemHandle_t Handle, CFE_ES_MemPoolBuf_t BufPtr);
+
+/*****************************************************************************/
+/**
+** \brief Gets info on a buffer previously allocated via #CFE_ES_GetPoolBuf
+**
+** \par Description
+**        This routine gets the used size of a buffer in the memory pool. This may be more than what was originally
+**        requested (which may be queried with CFE_ES_GetPoolBufInfo)
+**
+** \par Assumptions, External Events, and Notes:
+**        None
+**
+** \param[in]   Handle  The handle to the memory pool as returned by #CFE_ES_PoolCreate or #CFE_ES_PoolCreateNoSem.
+**
+** \param[in]   BufPtr  A pointer to the memory buffer to provide status for @nonnull.
+**
+** \return Allocated size of the buffer if successful, or status code if not successful, see \ref CFEReturnCodes
+** \retval #CFE_ES_ERR_RESOURCEID_NOT_VALID   \copybrief CFE_ES_ERR_RESOURCEID_NOT_VALID
+** \retval #CFE_ES_BUFFER_NOT_IN_POOL         \copybrief CFE_ES_BUFFER_NOT_IN_POOL
+** \retval #CFE_ES_BAD_ARGUMENT               \copybrief CFE_ES_BAD_ARGUMENT
+**
+** \sa #CFE_ES_PoolCreate, #CFE_ES_PoolCreateNoSem, #CFE_ES_PoolCreateEx, #CFE_ES_GetPoolBuf, #CFE_ES_GetMemPoolStats,
+*#CFE_ES_PutPoolBuf, #CFE_ES_GetPoolBufInfo
+**
+******************************************************************************/
+CFE_Status_t CFE_ES_GetPoolBufUsedSize(CFE_ES_MemHandle_t Handle, CFE_ES_MemPoolBuf_t BufPtr);
 
 /*****************************************************************************/
 /**

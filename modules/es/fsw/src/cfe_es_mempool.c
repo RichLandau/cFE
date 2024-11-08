@@ -499,7 +499,61 @@ CFE_Status_t CFE_ES_GetPoolBufInfo(CFE_ES_MemHandle_t Handle, CFE_ES_MemPoolBuf_
 
     DataOffset = (cpuaddr)BufPtr - PoolRecPtr->BaseAddr;
 
-    Status = CFE_ES_GenPoolGetBlockSize(&PoolRecPtr->Pool, &DataSize, DataOffset);
+    Status = CFE_ES_GenPoolGetBlockReqSize(&PoolRecPtr->Pool, &DataSize, DataOffset);
+
+    /*
+     * Real work ends here.
+     * If pool is mutex-protected, release the mutex now.
+     */
+    if (OS_ObjectIdDefined(PoolRecPtr->MutexId))
+    {
+        OS_MutSemGive(PoolRecPtr->MutexId);
+    }
+
+    if (Status == CFE_SUCCESS)
+    {
+        /*
+         * Historically this function returns the size of the buffer
+         * as an int32.  This is not workable for large (64 bit) pools.
+         */
+        Status = (int32)DataSize;
+    }
+
+    return Status;
+}
+
+CFE_Status_t CFE_ES_GetPoolBufUsedSize(CFE_ES_MemHandle_t Handle, CFE_ES_MemPoolBuf_t BufPtr)
+{
+    int32                   Status;
+    CFE_ES_MemPoolRecord_t *PoolRecPtr;
+    size_t                  DataOffset;
+    size_t                  DataSize;
+
+    if (BufPtr == NULL)
+    {
+        return CFE_ES_BAD_ARGUMENT;
+    }
+
+    PoolRecPtr = CFE_ES_LocateMemPoolRecordByID(Handle);
+
+    /* basic sanity check */
+    if (!CFE_ES_MemPoolRecordIsMatch(PoolRecPtr, Handle))
+    {
+        return CFE_ES_ERR_RESOURCEID_NOT_VALID;
+    }
+
+    /*
+     * Real work begins here.
+     * If pool is mutex-protected, take the mutex now.
+     */
+    if (OS_ObjectIdDefined(PoolRecPtr->MutexId))
+    {
+        OS_MutSemTake(PoolRecPtr->MutexId);
+    }
+
+    DataOffset = (cpuaddr)BufPtr - PoolRecPtr->BaseAddr;
+
+    Status = CFE_ES_GenPoolGetBlockUsedSize(&PoolRecPtr->Pool, &DataSize, DataOffset);
 
     /*
      * Real work ends here.
